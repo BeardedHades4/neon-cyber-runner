@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Cyber-Runner: Overdrive</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #05050d;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #fff;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+            background: #08081a;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.8);
+        }
+
+        .hud-top-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .score-display {
+            font-size: 28px;
+            color: #00f3ff;
+            letter-spacing: 2px;
+        }
+
+        .multiplier-display {
+            font-size: 16px;
+            color: #ff0055;
+        }
+
+        .credits-display {
+            font-size: 20px;
+            color: #ffd700;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+        }
+
+        .btn-icon {
+            background: rgba(10, 10, 25, 0.8);
+            border: 1px solid #00f3ff;
+            color: #00f3ff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            pointer-events: auto;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: #00f3ff;
+            color: #000;
+            box-shadow: 0 0 10px #00f3ff;
+        }
+
+        .modal-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 15, 0.88);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+        }
+
+        .modal-card {
+            background: rgba(15, 15, 35, 0.95);
+            border: 2px solid #00f3ff;
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.3);
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 480px;
+            max-height: 85vh;
+            overflow-y: auto;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .game-title {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(45deg, #00f3ff, #ff0055);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .btn-main {
+            background: linear-gradient(135deg, #00f3ff, #0066ff);
+            border: none;
+            color: #000;
+            font-weight: 800;
+            font-size: 18px;
+            padding: 14px 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+        }
+
+        .btn-main:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.8);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #ff0055;
+            color: #ff0055;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #ff0055;
+            color: #fff;
+            box-shadow: 0 0 12px #ff0055;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #ffd700, #ff8800);
+            border: none;
+            color: #000;
+            font-weight: 800;
+            font-size: 15px;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn-gold:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+        }
+
+        .shop-grid, .achievements-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+            margin-top: 10px;
+        }
+
+        .shop-item, .achievement-item {
+            background: rgba(30, 30, 60, 0.6);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .shop-item.equipped {
+            border-color: #00f3ff;
+            background: rgba(0, 243, 255, 0.1);
+        }
+
+        .achievement-item.claimed {
+            border-color: #ffd700;
+            opacity: 0.7;
+        }
+
+        .lang-selector {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .lang-selector select {
+            background: rgba(10, 10, 25, 0.9);
+            border: 1px solid #00f3ff;
+            color: #00f3ff;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            outline: none;
+        }
+
+        .cookie-banner {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 10, 20, 0.95);
+            border-top: 1px solid #00f3ff;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            z-index: 100;
+            pointer-events: auto;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .ad-simulation-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .ad-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #333;
+            border-top: 5px solid #00f3ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="lang-selector">
+            <select id="langSelect">
+                <option value="en">EN</option>
+                <option value="es">ES</option>
+                <option value="fr">FR</option>
+                <option value="de">DE</option>
+                <option value="zh">ZH</option>
+            </select>
+        </div>
+
+        <div class="ui-overlay">
+            <div class="hud-top">
+                <div>
+                    <div class="score-display" id="hudScore">0</div>
+                    <div class="multiplier-display" id="hudMultiplier">1.0x MULTIPLIER</div>
+                </div>
+                <div class="hud-top-right">
+                    <div class="credits-display" id="hudCredits">💎 0</div>
+                    <button class="btn-icon" id="btnPause">PAUSE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div class="modal-screen" id="screenStart">
+            <div class="modal-card">
+                <h1 class="game-title">NEON CYBER-RUNNER</h1>
+                <p style="font-size: 14px; color: #aaa;" id="txtTagline">OVERDRIVE EDITION</p>
+                
+                <div id="dailyRewardBox" style="background: rgba(255,215,0,0.1); border: 1px dashed #ffd700; padding: 10px; border-radius: 6px;">
+                    <div style="font-size: 12px; color: #ffd700;" id="txtDailyRewardTitle">DAILY LOGIN BONUS</div>
+                    <button class="btn-gold" id="btnClaimDaily" style="margin-top: 5px; width: 100%;">CLAIM 💎 100</button>
+                </div>
+
+                <button class="btn-main" id="btnStartGame">PLAY NOW</button>
+                
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn-secondary" id="btnOpenShop">SHOP</button>
+                    <button class="btn-secondary" id="btnOpenTrophies">TROPHIES</button>
+                    <button class="btn-secondary" id="btnOpenTelemetry">STATS</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div class="modal-screen hidden" id="screenGameOver">
+            <div class="modal-card">
+                <h2 style="color: #ff0055; font-size: 28px;" id="txtGameOver">CRITICAL FAILURE</h2>
+                <div>
+                    <div style="font-size: 14px; color: #aaa;" id="lblFinalScore">FINAL SCORE</div>
+                    <div style="font-size: 36px; color: #00f3ff; font-weight: bold;" id="txtFinalScore">0</div>
+                </div>
+                
+                <div style="background: rgba(0,243,255,0.05); padding: 10px; border-radius: 6px; font-size: 14px;">
+                    <span id="lblEarnedCredits">Earned Credits:</span> <strong style="color: #ffd700;" id="txtEarnedCredits">+0 💎</strong>
+                </div>
+
+                <div id="reviveSection" style="display: flex; flex-direction: column; gap: 8px;">
+                    <button class="btn-gold" id="btnWatchAdRevive">📺 WATCH AD TO REVIVE</button>
+                    <button class="btn-secondary" id="btnPayRevive">SPEND 50 💎 TO CONTINUE</button>
+                </div>
+
+                <button class="btn-main" id="btnRestart">TRY AGAIN</button>
+            </div>
+        </div>
+
+        <!-- Shop Modal -->
+        <div class="modal-screen hidden" id="screenShop">
+            <div class="modal-card">
+                <h2 style="color: #00f3ff;" id="txtShopTitle">CYBER SHOP</h2>
+                <div style="font-weight: bold; color: #ffd700;" id="txtShopCredits">Balance: 💎 0</div>
+                
+                <div class="shop-grid" id="shopContainer"></div>
+
+                <button class="btn-secondary" id="btnCloseShop">BACK</button>
+            </div>
+        </div>
+
+        <!-- Trophies Modal -->
+        <div class="modal-screen hidden" id="screenTrophies">
+            <div class="modal-card">
+                <h2 style="color: #ffd700;" id="txtTrophiesTitle">ACHIEVEMENTS</h2>
+                <div class="achievements-list" id="achievementsContainer"></div>
+                <button class="btn-secondary" id="btnCloseTrophies">BACK</button>
+            </div>
+        </div>
+
+        <!-- Telemetry Modal -->
+        <div class="modal-screen hidden" id="screenTelemetry">
+            <div class="modal-card">
+                <h2 style="color: #00f3ff;">TELEMETRY LOGS</h2>
+                <div style="text-align: left; font-size: 12px; font-family: monospace; background: #000; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto;" id="telemetryData"></div>
+                <button class="btn-secondary" id="btnCloseTelemetry">CLOSE</button>
+            </div>
+        </div>
+
+        <!-- Simulated Ad Screen -->
+        <div class="ad-simulation-overlay hidden" id="adSimulation">
+            <div class="ad-spinner"></div>
+            <h3 id="txtAdStatus">SPONSORED ANNOUNCEMENT</h3>
+            <p style="color: #aaa; margin-top: 10px; font-size: 14px;" id="txtAdTimer">Reward in 3 seconds...</p>
+        </div>
+
+        <!-- Cookie Consent Banner -->
+        <div class="cookie-banner" id="cookieBanner">
+            <span id="txtCookie">We use cookies and telemetry for optimal portal ad experiences.</span>
+            <button class="btn-icon" id="btnAcceptCookies">ACCEPT</button>
+        </div>
+    </div>
+
+    <script>
+        // --- LOCALIZATION DATA ---
+        const I18N = {
+            en: {
+                tagline: "OVERDRIVE EDITION",
+                play: "PLAY NOW",
+                dailyTitle: "DAILY LOGIN BONUS",
+                claim: "CLAIM 💎 ",
+                claimed: "CLAIMED",
+                gameOver: "CRITICAL FAILURE",
+                finalScore: "FINAL SCORE",
+                earnedCredits: "Earned Credits:",
+                watchAd: "📺 WATCH AD TO REVIVE",
+                spendRevive: "SPEND 50 💎 TO CONTINUE",
+                tryAgain: "TRY AGAIN",
+                shopTitle: "CYBER SHOP",
+                trophiesTitle: "ACHIEVEMENTS",
+                cookies: "We use telemetry & cookies for optimal portal ad execution.",
+                accept: "ACCEPT",
+                adStatus: "SPONSORED ANNOUNCEMENT",
+                adTimer: "Reward in "
+            },
+            es: {
+                tagline: "EDICIÓN OVERDRIVE",
+                play: "JUGAR AHORA",
+                dailyTitle: "RECOMPENSA DIARIA",
+                claim: "RECLAMAR 💎 ",
+                claimed: "RECLAMADO",
+                gameOver: "FALLO CRÍTICO",
+                finalScore: "PUNTUACIÓN FINAL",
+                earnedCredits: "Créditos Ganados:",
+                watchAd: "📺 VER ANUNCIO PARA REVIVIR",
+                spendRevive: "GASTAR 50 💎 PARA CONTINUAR",
+                tryAgain: "REINTENTAR",
+                shopTitle: "TIENDA CYBER",
+                trophiesTitle: "LOGROS",
+                cookies: "Usamos cookies para optimizar los anuncios del juego.",
+                accept: "ACEPTAR",
+                adStatus: "ANUNCIO PATROCINADO",
+                adTimer: "Recompensa en "
+            },
+            fr: {
+                tagline: "ÉDITION OVERDRIVE",
+                play: "JOUER",
+                dailyTitle: "BONUS QUOTIDIEN",
+                claim: "OBTENIR 💎 ",
+                claimed: "REÇU",
+                gameOver: "ÉCHEC CRITIQUE",
+                finalScore: "SCORE FINAL",
+                earnedCredits: "Crédits Gagnés:",
+                watchAd: "📺 REGARDER UNE PUB POUR REVIVRE",
+                spendRevive: "PAYER 50 💎 POUR CONTINUER",
+                tryAgain: "REASSAYER",
+                shopTitle: "BOUTIQUE CYBER",
+                trophiesTitle: "SUCCÈS",
+                cookies: "Nous utilisons des cookies pour l'optimisation des publicités.",
+                accept: "ACCEPTER",
+                adStatus: "ANNONCE SPONSORISÉE",
+                adTimer: "Récompense dans "
+            },
+            de: {
+                tagline: "OVERDRIVE EDITION",
+                play: "JETZT SPIELEN",
+                dailyTitle: "TÄGLICHER BONUS",
+                claim: "HOLEN 💎 ",
+                claimed: "EINGELÖST",
+                gameOver: "KRITISCHER FEHLER",
+                finalScore: "ENDPUNKTZAHL",
+                earnedCredits: "Verdiend Credits:",
+                watchAd: "📺 WERBUNG SEHEN FÜR REVIVE",
+                spendRevive: "50 💎 ZAHLEN FÜR WEITER",
+                tryAgain: "NOCHMAL",
+                shopTitle: "CYBER SHOP",
+                trophiesTitle: "ERFOLGE",
+                cookies: "Wir verwenden Cookies für Werbeoptimierungen.",
+                accept: "AKZEPTIEREN",
+                adStatus: "SPONSERTE ANZEIGE",
+                adTimer: "Belohnung in "
+            },
+            zh: {
+                tagline: "终极超频版",
+                play: "立即开始",
+                dailyTitle: "每日登录奖励",
+                claim: "领取 💎 ",
+                claimed: "已领取",
+                gameOver: "系统严重故障",
+                finalScore: "最终得分",
+                earnedCredits: "获得水晶:",
+                watchAd: "📺 观看广告复活",
+                spendRevive: "消耗 50 💎 复活",
+                tryAgain: "再次挑战",
+                shopTitle: "赛博商店",
+                trophiesTitle: "成就系统",
+                cookies: "我们使用 Cookie 来优化广告与游戏体验。",
+                accept: "接受",
+                adStatus: "赞助商广告",
+                adTimer: "奖励倒计时 "
+            }
+        };
+
+        // --- GAME STATE & TELEMETRY ---
+        const state = {
+            lang: 'en',
+            score: 0,
+            multiplier: 1.0,
+            credits: parseInt(localStorage.getItem('cyber_credits') || '0'),
+            highScore: parseInt(localStorage.getItem('cyber_highscore') || '0'),
+            hasRevived: false,
+            equippedSkin: localStorage.getItem('cyber_skin') || 'default',
+            equippedTrail: localStorage.getItem('cyber_trail') || 'cyan',
+            inventory: JSON.parse(localStorage.getItem('cyber_inventory') || '["default","cyan"]'),
+            lastDaily: localStorage.getItem('cyber_last_daily') || '0',
+            achievements: JSON.parse(localStorage.getItem('cyber_achievements') || '{}'),
+            telemetryLogs: []
+        };
+
+        function logTelemetry(event, detail = {}) {
+            const entry = { time: new Date().toISOString(), event, detail };
+            state.telemetryLogs.unshift(entry);
+            if (state.telemetryLogs.length > 30) state.telemetryLogs.pop();
+            console.log(`[Telemetry]`, event, detail);
+        }
+
+        // --- WEB AUDIO SYNTHESIZER ---
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            playTone(freq, type, duration, vol = 0.1) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+            pickup() { this.playTone(800, 'sine', 0.15, 0.15); }
+            shield() { this.playTone(400, 'triangle', 0.3, 0.2); }
+            hit() { this.playTone(120, 'sawtooth', 0.4, 0.3); }
+            boost() { this.playTone(600, 'square', 0.2, 0.1); }
+        }
+        const audio = new SoundEngine();
+
+        // --- PORTAL SDK MOCK WRAPPER ---
+        const PortalSDK = {
+            gameplayStart() { logTelemetry('SDK_GAMEPLAY_START'); },
+            gameplayStop() { logTelemetry('SDK_GAMEPLAY_STOP'); },
+            showCommercial(callback) {
+                logTelemetry('SDK_COMMERCIAL_REQUEST');
+                showAdSimulation(callback);
+            },
+            showRewarded(callback) {
+                logTelemetry('SDK_REWARDED_REQUEST');
+                showAdSimulation(callback);
+            }
+        };
+
+        // --- CANVAS ENGINE ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let isRunning = false;
+        let isPaused = false;
+        let animationFrameId = null;
+
+        let player = { x: 0, y: 0, width: 40, height: 40, speed: 7, shield: false };
+        let obstacles = [];
+        let pickups = [];
+        let particles = [];
+        let gridOffset = 0;
+
+        function resizeCanvas() {
+            canvas.width = Math.min(window.innerWidth, 600);
+            canvas.height = window.innerHeight;
+            player.y = canvas.height - 100;
+            if (!isRunning) player.x = canvas.width / 2 - player.width / 2;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Skins Config
+        const SKINS = {
+            default: { name: "Neon Cyan", color: "#00f3ff", price: 0 },
+            pink: { name: "Synth Pink", color: "#ff0055", price: 150 },
+            gold: { name: "Cyber Gold", color: "#ffd700", price: 300 },
+            green: { name: "Acid Green", color: "#00ff66", price: 500 }
+        };
+
+        const TRAILS = {
+            cyan: { name: "Cyber Grid", color: "rgba(0, 243, 255, ", price: 0 },
+            fire: { name: "Plasma Fire", color: "rgba(255, 68, 0, ", price: 100 },
+            rainbow: { name: "Strobe Flash", color: "rgba(255, 0, 222, ", price: 250 }
+        };
+
+        // Input Controls
+        const keys = {};
+        window.addEventListener('keydown', e => { keys[e.code] = true; });
+        window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+        // Touch Dragging
+        let touchStartX = null;
+        canvas.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+            audio.init();
+        });
+        canvas.addEventListener('touchmove', e => {
+            if (!touchStartX || !isRunning || isPaused) return;
+            const touchX = e.touches[0].clientX;
+            const diff = touchX - touchStartX;
+            player.x += diff * 1.2;
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+            touchStartX = touchX;
+        });
+        canvas.addEventListener('touchend', () => touchStartX = null);
+
+        // --- GAME LOOP ---
+        function startGame() {
+            audio.init();
+            state.score = 0;
+            state.multiplier = 1.0;
+            state.hasRevived = false;
+            obstacles = [];
+            pickups = [];
+            particles = [];
+            player.x = canvas.width / 2 - player.width / 2;
+            player.shield = false;
+            
+            document.querySelectorAll('.modal-screen').forEach(m => m.classList.add('hidden'));
+            isRunning = true;
+            isPaused = false;
+            
+            PortalSDK.gameplayStart();
+            logTelemetry('GAME_START');
+            
+            lastTime = performance.now();
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            gameLoop(performance.now());
+        }
+
+        let lastTime = performance.now();
+        let spawnTimer = 0;
+
+        function gameLoop(time) {
+            if (!isRunning) return;
+            const dt = (time - lastTime) / 1000;
+            lastTime = time;
+
+            if (!isPaused) {
+                update(dt);
+                render();
+            }
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function update(dt) {
+            // Player Movement
+            if (keys['ArrowLeft'] || keys['KeyA']) player.x -= player.speed;
+            if (keys['ArrowRight'] || keys['KeyD']) player.x += player.speed;
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+
+            // Score & Grid Acceleration
+            state.score += Math.round(10 * state.multiplier);
+            gridOffset = (gridOffset + 8) % 40;
+            document.getElementById('hudScore').innerText = state.score;
+
+            // Spawns
+            spawnTimer += dt;
+            if (spawnTimer > Math.max(0.35, 1.2 - (state.score / 10000))) {
+                spawnTimer = 0;
+                // Obstacle
+                obstacles.push({
+                    x: Math.random() * (canvas.width - 35),
+                    y: -40,
+                    width: 35 + Math.random() * 20,
+                    height: 25,
+                    speed: 4 + Math.random() * 3 + (state.score / 2000)
+                });
+
+                // Pickups
+                if (Math.random() < 0.35) {
+                    const type = Math.random() < 0.2 ? 'shield' : 'credit';
+                    pickups.push({
+                        x: Math.random() * (canvas.width - 25),
+                        y: -30,
+                        width: 22,
+                        height: 22,
+                        type: type,
+                        speed: 3.5
+                    });
+                }
+            }
+
+            // Update Obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.y += obs.speed;
+
+                // Collision Detection
+                if (checkCollision(player, obs)) {
+                    createParticles(player.x + player.width/2, player.y + player.height/2, '#ff0055', 15);
+                    if (player.shield) {
+                        player.shield = false;
+                        audio.hit();
+                        obstacles.splice(i, 1);
+                    } else {
+                        triggerGameOver();
+                        return;
+                    }
+                } else if (obs.y > canvas.height) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Update Pickups
+            for (let i = pickups.length - 1; i >= 0; i--) {
+                const p = pickups[i];
+                p.y += p.speed;
+
+                if (checkCollision(player, p)) {
+                    if (p.type === 'credit') {
+                        state.credits += 5;
+                        audio.pickup();
+                        createParticles(p.x, p.y, '#ffd700', 8);
+                    } else if (p.type === 'shield') {
+                        player.shield = true;
+                        audio.shield();
+                        createParticles(p.x, p.y, '#00f3ff', 10);
+                    }
+                    saveUserData();
+                    updateHUD();
+                    pickups.splice(i, 1);
+                } else if (p.y > canvas.height) {
+                    pickups.splice(i, 1);
+                }
+            }
+
+            // Trail particles
+            const trailColor = TRAILS[state.equippedTrail]?.color || "rgba(0, 243, 255, ";
+            particles.push({
+                x: player.x + player.width / 2 + (Math.random() * 10 - 5),
+                y: player.y + player.height,
+                vx: (Math.random() - 0.5) * 1,
+                vy: 2 + Math.random() * 2,
+                life: 1,
+                color: trailColor
+            });
+
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+                pt.life -= 0.04;
+                if (pt.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        function checkCollision(r1, r2) {
+            return !(r2.x > r1.x + r1.width || 
+                     r2.x + r2.width < r1.x || 
+                     r2.y > r1.y + r1.height ||
+                     r2.y + r2.height < r1.y);
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Neon Grid Background
+            ctx.strokeStyle = "rgba(0, 243, 255, 0.12)";
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = gridOffset; y < canvas.height; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Particles
+            particles.forEach(pt => {
+                ctx.fillStyle = pt.color + pt.life + ")";
+                ctx.fillRect(pt.x, pt.y, 4, 4);
+            });
+
+            // Player Ship
+            const skinColor = SKINS[state.equippedSkin]?.color || "#00f3ff";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = skinColor;
+            ctx.fillStyle = skinColor;
+            
+            // Ship Triangle Shape
+            ctx.beginPath();
+            ctx.moveTo(player.x + player.width / 2, player.y);
+            ctx.lineTo(player.x + player.width, player.y + player.height);
+            ctx.lineTo(player.x, player.y + player.height);
+            ctx.closePath();
+            ctx.fill();
+
+            if (player.shield) {
+                ctx.strokeStyle = "#00f3ff";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(player.x + player.width/2, player.y + player.height/2, player.width, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Obstacles
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#ff0055";
+            ctx.fillStyle = "#ff0055";
+            obstacles.forEach(obs => {
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+            });
+
+            // Pickups
+            pickups.forEach(p => {
+                ctx.shadowBlur = 10;
+                if (p.type === 'credit') {
+                    ctx.shadowColor = "#ffd700";
+                    ctx.fillStyle = "#ffd700";
+                    ctx.beginPath();
+                    ctx.arc(p.x + p.width/2, p.y + p.height/2, p.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.shadowColor = "#00f3ff";
+                    ctx.fillStyle = "#00f3ff";
+                    ctx.fillRect(p.x, p.y, p.width, p.height);
+                }
+            });
+
+            ctx.shadowBlur = 0;
+        }
+
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    life: 1.0,
+                    color: color.startsWith('#') ? hexToRgb(color) : color
+                });
+            }
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ` : "rgba(255,255,255, ";
+        }
+
+        function triggerGameOver() {
+            isRunning = false;
+            PortalSDK.gameplayStop();
+            audio.hit();
+            logTelemetry('GAME_OVER', { score: state.score });
+
+            const earned = Math.floor(state.score / 100);
+            state.credits += earned;
+            if (state.score > state.highScore) {
+                state.highScore = state.score;
+            }
+            saveUserData();
+            updateHUD();
+
+            document.getElementById('txtFinalScore').innerText = state.score;
+            document.getElementById('txtEarnedCredits').innerText = `+${earned} 💎`;
+            
+            if (state.hasRevived) {
+                document.getElementById('reviveSection').classList.add('hidden');
+            } else {
+                document.getElementById('reviveSection').classList.remove('hidden');
+            }
+
+            document.getElementById('screenGameOver').classList.remove('hidden');
+        }
+
+        function reviveGame() {
+            state.hasRevived = true;
+            document.getElementById('screenGameOver').classList.add('hidden');
+            player.shield = true;
+            obstacles = [];
+            isRunning = true;
+            PortalSDK.gameplayStart();
+            logTelemetry('GAME_REVIVED');
+            lastTime = performance.now();
+            gameLoop(performance.now());
+        }
+
+        function showAdSimulation(callback) {
+            const overlay = document.getElementById('adSimulation');
+            const timerTxt = document.getElementById('txtAdTimer');
+            overlay.classList.remove('hidden');
+            
+            let timeLeft = 3;
+            timerTxt.innerText = `${I18N[state.lang].adTimer} ${timeLeft}s...`;
+            
+            const interval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    timerTxt.innerText = `${I18N[state.lang].adTimer} ${timeLeft}s...`;
+                } else {
+                    clearInterval(interval);
+                    overlay.classList.add('hidden');
+                    if (callback) callback();
+                }
+            }, 1000);
+        }
+
+        // --- DATA & UI UPDATES ---
+        function saveUserData() {
+            localStorage.setItem('cyber_credits', state.credits.toString());
+            localStorage.setItem('cyber_highscore', state.highScore.toString());
+            localStorage.setItem('cyber_skin', state.equippedSkin);
+            localStorage.setItem('cyber_trail', state.equippedTrail);
+            localStorage.setItem('cyber_inventory', JSON.stringify(state.inventory));
+            localStorage.setItem('cyber_last_daily', state.lastDaily);
+            localStorage.setItem('cyber_achievements', JSON.stringify(state.achievements));
+        }
+
+        function updateHUD() {
+            document.getElementById('hudCredits').innerText = `💎 ${state.credits}`;
+            document.getElementById('hudMultiplier').innerText = `${state.multiplier.toFixed(1)}x MULTIPLIER`;
+        }
+
+        function applyLocalization() {
+            const dict = I18N[state.lang] || I18N.en;
+            document.getElementById('txtTagline').innerText = dict.tagline;
+            document.getElementById('btnStartGame').innerText = dict.play;
+            document.getElementById('txtDailyRewardTitle').innerText = dict.dailyTitle;
+            document.getElementById('txtGameOver').innerText = dict.gameOver;
+            document.getElementById('lblFinalScore').innerText = dict.finalScore;
+            document.getElementById('btnWatchAdRevive').innerText = dict.watchAd;
+            document.getElementById('btnPayRevive').innerText = dict.spendRevive;
+            document.getElementById('btnRestart').innerText = dict.tryAgain;
+            document.getElementById('txtShopTitle').innerText = dict.shopTitle;
+            document.getElementById('txtTrophiesTitle').innerText = dict.trophiesTitle;
+            document.getElementById('txtCookie').innerText = dict.cookies;
+            document.getElementById('btnAcceptCookies').innerText = dict.accept;
+            document.getElementById('txtAdStatus').innerText = dict.adStatus;
+        }
+
+        function renderShop() {
+            const container = document.getElementById('shopContainer');
+            document.getElementById('txtShopCredits').innerText = `Balance: 💎 ${state.credits}`;
+            container.innerHTML = '';
+
+            // Render Skins
+            Object.keys(SKINS).forEach(key => {
+                const item = SKINS[key];
+                const owned = state.inventory.includes(key);
+                const equipped = state.equippedSkin === key;
+
+                const div = document.createElement('div');
+                div.className = `shop-item ${equipped ? 'equipped' : ''}`;
+                div.innerHTML = `
+                    <div>
+                        <strong style="color: ${item.color}">${item.name}</strong>
+                        <div style="font-size: 11px; color: #aaa;">Skin</div>
+                    </div>
+                    <div>
+                        ${equipped ? '<span style="color: #00f3ff; font-weight: bold;">EQUIPPED</span>' : 
+                          owned ? `<button class="btn-icon" onclick="equipItem('skin', '${key}')">EQUIP</button>` :
+                          `<button class="btn-gold" onclick="buyItem('${key}', ${item.price})">💎 ${item.price}</button>`}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.buyItem = function(key, price) {
+            if (state.credits >= price) {
+                state.credits -= price;
+                state.inventory.push(key);
+                state.equippedSkin = key;
+                saveUserData();
+                updateHUD();
+                renderShop();
+                logTelemetry('SHOP_BUY', { item: key });
+            }
+        };
+
+        window.equipItem = function(type, key) {
+            if (type === 'skin') state.equippedSkin = key;
+            saveUserData();
+            renderShop();
+        };
+
+        function renderTelemetry() {
+            const box = document.getElementById('telemetryData');
+            box.innerText = JSON.stringify(state.telemetryLogs, null, 2);
+        }
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('langSelect').addEventListener('change', (e) => {
+            state.lang = e.target.value;
+            applyLocalization();
+        });
+
+        document.getElementById('btnStartGame').addEventListener('click', startGame);
+        document.getElementById('btnRestart').addEventListener('click', startGame);
+        
+        document.getElementById('btnPause').addEventListener('click', () => {
+            if (!isRunning) return;
+            isPaused = !isPaused;
+            document.getElementById('btnPause').innerText = isPaused ? 'RESUME' : 'PAUSE';
+        });
+
+        document.getElementById('btnWatchAdRevive').addEventListener('click', () => {
+            PortalSDK.showRewarded(() => reviveGame());
+        });
+
+        document.getElementById('btnPayRevive').addEventListener('click', () => {
+            if (state.credits >= 50) {
+                state.credits -= 50;
+                saveUserData();
+                updateHUD();
+                reviveGame();
+            }
+        });
+
+        document.getElementById('btnOpenShop').addEventListener('click', () => {
+            renderShop();
+            document.getElementById('screenShop').classList.remove('hidden');
+        });
+        document.getElementById('btnCloseShop').addEventListener('click', () => {
+            document.getElementById('screenShop').classList.add('hidden');
+        });
+
+        document.getElementById('btnOpenTelemetry').addEventListener('click', () => {
+            renderTelemetry();
+            document.getElementById('screenTelemetry').classList.remove('hidden');
+        });
+        document.getElementById('btnCloseTelemetry').addEventListener('click', () => {
+            document.getElementById('screenTelemetry').classList.add('hidden');
+        });
+
+        document.getElementById('btnClaimDaily').addEventListener('click', () => {
+            const now = Date.now();
+            if (now - parseInt(state.lastDaily) > 86400000) { // 24 Hours
+                state.credits += 100;
+                state.lastDaily = now.toString();
+                saveUserData();
+                updateHUD();
+                document.getElementById('btnClaimDaily').innerText = I18N[state.lang].claimed;
+                document.getElementById('btnClaimDaily').disabled = true;
+            }
+        });
+
+        document.getElementById('btnAcceptCookies').addEventListener('click', () => {
+            document.getElementById('cookieBanner').classList.add('hidden');
+        });
+
+        // Initialization
+        updateHUD();
+        applyLocalization();
+        logTelemetry('APP_INIT');
+    </script>
+</body>
+</html>
