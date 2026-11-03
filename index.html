@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Neon Cyber-Runner: Overdrive</title>
+    
+    <!-- 1. OFFICIAL CRAZYGAMES SDK SCRIPT (MANDATORY FOR PLATFORM COMPLIANCE) -->
+    <script src="https://sdk.crazygames.com/crazygames-sdk-v2.js"></script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -400,7 +404,7 @@
             </div>
         </div>
 
-        <!-- Simulated Ad Screen -->
+        <!-- Simulated Ad Screen (Fallback for Local Dev) -->
         <div class="ad-simulation-overlay hidden" id="adSimulation">
             <div class="ad-spinner"></div>
             <h3 id="txtAdStatus">SPONSORED ANNOUNCEMENT</h3>
@@ -567,19 +571,57 @@
         }
         const audio = new SoundEngine();
 
-        // --- PORTAL SDK MOCK WRAPPER ---
+        // --- OFFICIAL CRAZYGAMES SDK INTEGRATION WRAPPER ---
         const PortalSDK = {
-            gameplayStart() { logTelemetry('SDK_GAMEPLAY_START'); },
-            gameplayStop() { logTelemetry('SDK_GAMEPLAY_STOP'); },
+            gameplayStart() {
+                logTelemetry('SDK_GAMEPLAY_START');
+                if (window.CrazyGames && window.CrazyGames.SDK) {
+                    window.CrazyGames.SDK.gameplayStart();
+                }
+            },
+            gameplayStop() {
+                logTelemetry('SDK_GAMEPLAY_STOP');
+                if (window.CrazyGames && window.CrazyGames.SDK) {
+                    window.CrazyGames.SDK.gameplayStop();
+                }
+            },
             showCommercial(callback) {
                 logTelemetry('SDK_COMMERCIAL_REQUEST');
-                showAdSimulation(callback);
+                if (window.CrazyGames && window.CrazyGames.SDK) {
+                    window.CrazyGames.SDK.ad.requestAd("midgame", {
+                        adStarted: () => { isPaused = true; },
+                        adFinished: () => { isPaused = false; if (callback) callback(); },
+                        adError: () => { isPaused = false; if (callback) callback(); }
+                    });
+                } else {
+                    showAdSimulation(callback);
+                }
             },
             showRewarded(callback) {
                 logTelemetry('SDK_REWARDED_REQUEST');
-                showAdSimulation(callback);
+                if (window.CrazyGames && window.CrazyGames.SDK) {
+                    window.CrazyGames.SDK.ad.requestAd("rewarded", {
+                        adStarted: () => { isPaused = true; },
+                        adFinished: () => { isPaused = false; if (callback) callback(); },
+                        adError: () => { isPaused = false; }
+                    });
+                } else {
+                    showAdSimulation(callback);
+                }
             }
         };
+
+        // Initialize SDK on load
+        window.addEventListener('load', async () => {
+            try {
+                if (window.CrazyGames && window.CrazyGames.SDK) {
+                    await window.CrazyGames.SDK.init();
+                    console.log("CrazyGames SDK initialized successfully.");
+                }
+            } catch (error) {
+                console.error("CrazyGames SDK Init Failed:", error);
+            }
+        });
 
         // --- CANVAS ENGINE ---
         const canvas = document.getElementById('gameCanvas');
@@ -1089,3 +1131,4 @@
     </script>
 </body>
 </html>
+
